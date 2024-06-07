@@ -7,7 +7,7 @@ class UR5e_PARAMS(object):
     @param inflation_factor - by what factor inflate the minimal sphere radious of each link
     @param tool_lenght - the lenght of the tool [meters]. for the gripper, set 0.135 meter 
     '''
-    def __init__(self, inflation_factor=1.0, tool_lenght=0.135):
+    def __init__(self, inflation_factor=1.0, tool_lenght=0.135+0.075): # adding 7.5 cm
                     # alpha, a, d, theta_const
         self.ur_DH = [ [0, 0, 0.1625, 0], # shoulder - > base_link
                     [np.pi/2, 0,0, 0], #upper_arm_link - > shoulder
@@ -113,3 +113,11 @@ class Transform(object):
         '''
         trans_matrix = self.get_trans_matrix(conf)
         return self.get_global_sphere_coords(trans_matrix)
+
+    def get_end_effector_position(self, conf):
+        '''
+        Returns the XYZ coordinates of the end effector (wrist_3_link) for a given configuration
+        '''
+        trans_matrix = self.get_trans_matrix(conf)
+        end_effector_matrix = trans_matrix['wrist_3_link']
+        return end_effector_matrix[:3, 3]

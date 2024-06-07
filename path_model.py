@@ -21,13 +21,13 @@ class Path_Model(object):
         self.new_end = np.array(json_dict['NEW_END'])
         self.waypoints_confs = np.array(json_dict['WAY_POINTS'])
         waypoints = []
+
         for conf in self.waypoints_confs:
-            manipulator_spheres = self.transform.conf2sphere_coords(conf) # forward kinematics
-            coords_temp = manipulator_spheres['wrist_3_link'][-1][:3]
-            coords = coords_temp.tolist()
+            conf = np.deg2rad(conf)
+            coords = self.transform.get_end_effector_position(conf)
             waypoints.append(coords)
-        self.waypoints_coords = np.array([np.array(sublist) for sublist in waypoints])
-        
+        self.waypoints_coords = np.array(waypoints)
+
         #create the waypoint coords by sinus wave
         """self.waypoints_coords = self.create_sine_wave_waypoints()
         self.new_start = self.waypoints_coords[0]
