@@ -4,29 +4,24 @@ from kinematics import UR5e_PARAMS, Transform
 from environment import Environment
 
 class Layered_Graph(object):
-    def __init__(self):
+    def __init__(self, inverse_kinematics, splines):
         self.ur_params = UR5e_PARAMS()
         self.transform = Transform(self.ur_params)
-        self.env = Environment(env_idx=2) #TODO - I think it suppose to be 2, it was 3 before, or maybe we can carete anv_index 4 with our environment.
-        self.bb = Building_Blocks(self.transform, self.ur_params, self.env)
+        self.env = Environment(env_idx=2)
+        self.bb = Building_Blocks(self.transform, self.ur_params, self.env, inverse_kinematics)
         self.layers = []  # list of layers, each layer is a list of configurations
-        self.edges = []   # list of edges, each edge is a tuple (src_node, dst_node, cost)
+        self.edges = []  # list of edges, each edge is a tuple (src_node, dst_node, cost, max_dist)
+        t_values = np.linspace(0, 1, 500)  # More samples for higher accuracy
+        self.spline_points = np.array([spline(t_values) for spline in splines]).T
 
     def add_layer(self, configurations):
         layer_index = len(self.layers)
         self.layers.append(configurations)
         return layer_index
 
-    def add_edge(self, src_node, dst_node, cost):
-        self.edges.append((src_node, dst_node, cost))
+    def add_edge(self, src_node, dst_node, cost, max_dist):
+        self.edges.append((src_node, dst_node, cost, max_dist))
 
-    """def add_node(self, layer_index, configuration):
-        if layer_index >= len(self.layers):
-            self.layers.append([])
-        self.layers[layer_index].append(configuration)
-        node_index = len(self.layers[layer_index]) - 1
-        self.edges[(layer_index, node_index)] = []"""
-    
     def get_nodes(self, layer_index):
         return self.layers[layer_index]
 
@@ -43,24 +38,26 @@ class Layered_Graph(object):
         # Connect nodes within the same layer
         for i in range(len(current_layer)):
             for j in range(i + 1, len(current_layer)):
-                if self.bb.local_planner(current_layer[i], current_layer[j]):
+                is_collision, max_dist = self.bb.local_planner(current_layer[i], current_layer[j], self.spline_points)
+                if not is_collision:
                     cost = self.bb.edge_cost(current_layer[i], current_layer[j])
-                    self.add_edge((layer_index, i), (layer_index, j), cost)
-                    self.add_edge((layer_index, j), (layer_index, i), cost)
+                    self.add_edge((layer_index, i), (layer_index, j), cost, max_dist)
+                    self.add_edge((layer_index, j), (layer_index, i), cost, max_dist)
                 else:
                     print("can't extend due to collision")
 
         # Connect nodes with the previous layer
         for i in range(len(previous_layer)):
             for j in range(len(current_layer)):
-                if self.bb.local_planner(previous_layer[i], current_layer[j]):
+                is_collision, max_dist = self.bb.local_planner(previous_layer[i], current_layer[j], self.spline_points)
+                if not is_collision:
                     cost = self.bb.edge_cost(previous_layer[i], current_layer[j])
-                    self.add_edge((layer_index - 1, i), (layer_index, j), cost)
-                    self.add_edge((layer_index, j), (layer_index - 1, i), cost)
+                    self.add_edge((layer_index - 1, i), (layer_index, j), cost, max_dist)
+                    self.add_edge((layer_index, j), (layer_index - 1, i), cost, max_dist)
 
     def build_graph(self, ik_solutions_per_layer):
         for layer_index, configurations in enumerate(ik_solutions_per_layer):
             self.add_layer(configurations)
-            self.connect_layers(self.bb, layer_index)
+            self.connect_layers(layer_index)
         print("Graph constructed with ", len(self.layers), " layers and ", len(self.edges), " edges")
         return self.layers, self.edges
