@@ -111,7 +111,7 @@ class Building_Blocks(object):
         """
         point = point.flatten()  # Ensure point is a 1D array
         distances = np.linalg.norm(splines - point, axis=1)
-        return np.max(distances)
+        return np.min(distances)
 
     def edge_cost(self, conf1, conf2):
         """Returns the Edge cost- the cost of transition from configuration 1 to configuration 2."""
