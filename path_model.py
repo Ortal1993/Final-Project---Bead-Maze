@@ -68,8 +68,6 @@ class Path_Model(object):
 
     def adjust_path(self):
         """Adjust the path to align with new start and new end points."""
-        print(type(self.new_start))
-        print(type(self.waypoints_coords[0]))
         translated_points = self.translate(self.waypoints_coords, self.new_start - self.waypoints_coords[0])
         orig_vector = self.waypoints_coords[-1] - self.waypoints_coords[0]
         new_vector = self.new_end - self.new_start

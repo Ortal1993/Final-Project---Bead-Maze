@@ -1,8 +1,15 @@
 import numpy as np
 import argparse
+import os
 from inverse_kinematics import Inverse_Kinematics
+from building_blocks import Building_Blocks
+from kinematics import UR5e_PARAMS, Transform
+from environment import Environment
+from visualizer import Visualize_UR
+
 from layered_graph import Layered_Graph
 from path_model import Path_Model
+from dijkstra import Dijkstra
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='script for bead maze')
@@ -28,11 +35,50 @@ if __name__ == "__main__":
         # Compute IK solutions for the current waypoint
         possible_configs = ik_solver.find_possible_configs()
 
-        ik_solutions_per_layer.append(possible_configs)
+        ik_solutions_per_layer.append(possible_configs)#TODO - verify that it is list of list
+    
+    ur_params = UR5e_PARAMS()
+    transform = Transform(ur_params)
+    env = Environment(env_idx=2)
+    bb = Building_Blocks(transform, ur_params, env, ik_solver)
 
     # Building the graph using valid configurations for each waypoint
-    graph = Layered_Graph(ik_solver, splines)
+    graph = Layered_Graph(ur_params, env, bb, splines)
     graph.build_graph(ik_solutions_per_layer)
 
+    idx_first_layer = 0
+    idx_last_layer = len(graph.layers)
+    nodes_in_first_layer = graph.get_nodes_by_layer(idx_first_layer)    
+    nodes_in_last_layer = graph.get_nodes_by_layer(idx_last_layer - 1)
+    min_bottle_neck = np.inf
+    shortest_path = None
+    
+    for i in range(len(nodes_in_first_layer)):
+        for j in range(len(nodes_in_last_layer)):
+            dijkstra = Dijkstra(graph, (idx_first_layer, i), (idx_last_layer, j))
+            curr_bottleneck, path = dijkstra.find_shortest_path()
+            if curr_bottleneck != None:
+                if curr_bottleneck < min_bottle_neck:
+                    min_bottle_neck = curr_bottleneck
+                    shortest_path = path
+                    print("shortest path:\n")
+                    print(shortest_path)
+            print("Did not found a new shortest path")
+            
 
-    # TODO create Dijkstra algorithm to find an optimal path
+    directory = "final_path"
+    # Create the directory if it doesn't exist
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    file_path = os.path.join(directory, 'path')
+    np.save(file_path, np.array(shortest_path))
+
+    visualizer = Visualize_UR(ur_params, env=env, transform=transform, bb=bb)
+
+    try:
+        path = np.load(file_path + '.npy')
+        visualizer.show_path(path)
+    except:
+        print('No Path Found')
+
