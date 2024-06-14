@@ -54,16 +54,15 @@ if __name__ == "__main__":
     shortest_path = None
     
     for i in range(len(nodes_in_first_layer)):
-        for j in range(len(nodes_in_last_layer)):
-            dijkstra = Dijkstra(graph, (idx_first_layer, i), (idx_last_layer, j))
-            curr_bottleneck, path = dijkstra.find_shortest_path()
-            if curr_bottleneck != None:
-                if curr_bottleneck < min_bottle_neck:
-                    min_bottle_neck = curr_bottleneck
-                    shortest_path = path
-                    print("shortest path:\n")
-                    print(shortest_path)
-            print("Did not found a new shortest path")
+        dijkstra = Dijkstra(graph, (idx_first_layer, i), idx_last_layer - 1)
+        curr_bottleneck, path = dijkstra.find_shortest_path()
+        if curr_bottleneck != None:
+            if curr_bottleneck < min_bottle_neck:
+                min_bottle_neck = curr_bottleneck
+                shortest_path = path
+                print("shortest path:\n")
+                print(shortest_path)
+        print("Did not found a new shortest path")
             
 
     directory = "final_path"

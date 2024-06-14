@@ -2,11 +2,11 @@ import numpy as np
 import heapq
 
 class Dijkstra(object):
-    def __init__(self, graph, start, end):
+    def __init__(self, graph, start, idx_last_layer):
         self.graph = graph #list of layers - each layer is a list of configurations
                            #list of edges - each edge is a tuple (src_node, dst_node, cost, max_dist)
         self.start = start
-        self.end = end
+        self.idx_last_layer = idx_last_layer
 
     def find_shortest_path(self):
         """
@@ -23,12 +23,17 @@ class Dijkstra(object):
         #the heap property based on the first element of the tuples pushed into it
         heapq.heappush(open_set, (b_neck[self.start], self.start))  # (node, bottleneck cost)
         
+        visited = []
         while open_set:
             # Get the node with the minimum bottleneck cost
             current_bottleneck, v_curr = heapq.heappop(open_set)
+            if v_curr in visited:
+                continue
+            visited.append(v_curr)
             
             # If we reached the target, return the bottleneck cost
-            if v_curr == self.end:
+            (v1, v2) = v_curr
+            if v1 == self.idx_last_layer:
                 path = self.compute_path(v_curr, predecessors) 
                 return current_bottleneck, np.array(path)
             
@@ -40,13 +45,12 @@ class Dijkstra(object):
             for neighbor in neighbors:
                 (v1, v2), edge_cost, dist, node = neighbor
                 new_bottleneck = max(edge_cost, current_bottleneck)
-                if any((v1, v2) == v for _, v in open_set):
-                    if b_neck[(v1, v2)] < new_bottleneck:
-                        continue
-                    else:
-                        b_neck[(v1, v2)] = new_bottleneck
-                        predecessors[(v1, v2)] = v_curr
-                        heapq.heappush(open_set, (new_bottleneck, (v1, v2)))
+                if any((v1, v2) == v for _, v in open_set) and b_neck[(v1, v2)] <= new_bottleneck:
+                    continue
+                else:
+                    b_neck[(v1, v2)] = new_bottleneck
+                    predecessors[(v1, v2)] = v_curr
+                    heapq.heappush(open_set, (new_bottleneck, (v1, v2)))
         
         # If the target is not reachable
         return None, []    
