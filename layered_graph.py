@@ -17,11 +17,17 @@ class Layered_Graph(object):
     def add_layer(self, configurations):
         self.layers.append(configurations)
 
-    def add_edge(self, src_node, dst_node, cost, max_dist, node):
+    def add_edge(self, src_node, dst_node, cost, max_dist):
         if src_node in self.edges.keys():
-            self.edges[src_node] += [[dst_node, cost, max_dist, node]]
+            self.edges[src_node] += [[dst_node, cost, max_dist]]
         else:
-            self.edges[src_node] = [[dst_node, cost, max_dist, node]]
+            self.edges[src_node] = [[dst_node, cost, max_dist]]
+
+    # def add_edge(self, src_node, dst_node, cost, max_dist, node):
+    #     if src_node in self.edges.keys():
+    #         self.edges[src_node] += [[dst_node, cost, max_dist, node]]
+    #     else:
+    #         self.edges[src_node] = [[dst_node, cost, max_dist, node]]
 
     def get_nodes_by_layer(self, layer_index):
         return self.layers[layer_index]
@@ -40,14 +46,13 @@ class Layered_Graph(object):
                                                                self.spline_points)
                 if not is_collision:
                     v_i = current_layer_nodes[i]
-                    vertex_i = [item for sublist in v_i for item in sublist]
-
                     v_j = current_layer_nodes[j]
-                    vertex_j = [item for sublist in v_j for item in sublist]
 
                     cost = self.bb.edge_cost(v_i, v_j)
-                    self.add_edge((layer_index, i), (layer_index, j), cost, max_dist, (vertex_i, vertex_j))
-                    self.add_edge((layer_index, j), (layer_index, i), cost, max_dist, (vertex_j, vertex_i))
+                    #self.add_edge((layer_index, i), (layer_index, j), cost, max_dist, (v_i, v_j))
+                    #self.add_edge((layer_index, j), (layer_index, i), cost, max_dist, (v_j, v_i))
+                    self.add_edge((layer_index, i), (layer_index, j), cost, max_dist)
+                    self.add_edge((layer_index, j), (layer_index, i), cost, max_dist)
                     print("extend")
                 else:
                     print("can't extend due to collision")
@@ -65,14 +70,13 @@ class Layered_Graph(object):
                                                                self.spline_points)
                 if not is_collision:
                     v_i = previous_layer_nodes[i]
-                    vertex_i = [item for sublist in v_i for item in sublist]
-
                     v_j = current_layer_nodes[j]
-                    vertex_j = [item for sublist in v_j for item in sublist]
 
                     cost = self.bb.edge_cost(v_i, v_j)
-                    self.add_edge((layer_index - 1, i), (layer_index, j), cost, max_dist, (vertex_i, vertex_j))
-                    self.add_edge((layer_index, j), (layer_index - 1, i), cost, max_dist, (vertex_i, vertex_j))
+                    #self.add_edge((layer_index - 1, i), (layer_index, j), cost, max_dist, (v_i, v_j))
+                    #self.add_edge((layer_index, j), (layer_index - 1, i), cost, max_dist, (v_j, v_i))
+                    self.add_edge((layer_index - 1, i), (layer_index, j), cost, max_dist)
+                    #self.add_edge((layer_index, j), (layer_index - 1, i), cost, max_dist)
                     print("extend with previous")
                 else:
                     print("can't extend with previous due to collision")

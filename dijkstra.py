@@ -29,11 +29,11 @@ class Dijkstra(object):
             current_bottleneck, v_curr = heapq.heappop(open_set)
             if v_curr in visited:
                 continue
-            visited.append(v_curr)
+            #visited.append(v_curr)
             
             # If we reached the target, return the bottleneck cost
-            (v1, v2) = v_curr
-            if v1 == self.idx_last_layer:
+            (layer, conf) = v_curr
+            if layer == self.idx_last_layer:
                 path = self.compute_path(v_curr, predecessors) 
                 return current_bottleneck, np.array(path)
             
@@ -43,16 +43,22 @@ class Dijkstra(object):
                 continue
             # Explore the neighbors
             for neighbor in neighbors:
-                (v1, v2), edge_cost, dist, node = neighbor
-                new_bottleneck = max(edge_cost, current_bottleneck)
+                #(v1, v2), edge_cost, dist, node = neighbor
+                (v1, v2), edge_cost, dist = neighbor
+                if (v1, v2) in visited:
+                    continue
+                
+                new_bottleneck = max(dist, current_bottleneck)
                 if any((v1, v2) == v for _, v in open_set) and b_neck[(v1, v2)] <= new_bottleneck:
                     continue
                 else:
                     b_neck[(v1, v2)] = new_bottleneck
                     predecessors[(v1, v2)] = v_curr
                     heapq.heappush(open_set, (new_bottleneck, (v1, v2)))
+            visited.append(v_curr)
         
         # If the target is not reachable
+        print(visited)
         return None, []    
 
     def compute_path(self, v, predecessors):

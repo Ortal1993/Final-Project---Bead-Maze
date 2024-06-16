@@ -13,8 +13,8 @@ class Visualize_UR(object):
         self.env = env
         self.transform = transform
         self.bb = bb
-        plt.ion()
-        plt.show()                
+        #plt.ion() #interactive on
+        #plt.show()                
     
     def plot_links(self,end_efctors):
         for link_edge in end_efctors:
@@ -32,7 +32,6 @@ class Visualize_UR(object):
         self.ax.plot([0,0.5],[0,0],[0,0],c='red')
         self.ax.plot([0,0],[0,0.5],[0,0],c='green')
         self.ax.plot([0,0],[0,0],[0,0.5],c='blue')
-        self.draw_square()
         self.draw_obstacles()
         self.fig.canvas.flush_events()
 
@@ -46,13 +45,6 @@ class Visualize_UR(object):
             y = np.sin(u) * np.sin(v) * self.env.radius + sphere[1]
             z = np.cos(v) * self.env.radius + sphere[2]
             self.ax.plot_surface(x, y, z, color='red',alpha=0.5)
-
-        u, v = np.mgrid[0:2 * np.pi:10j, 0:np.pi:10j]
-        for sphere in self.env.cubes_obstacles:
-            x = np.cos(u) * np.sin(v) * self.env.radius + sphere[0]
-            y = np.sin(u) * np.sin(v) * self.env.radius + sphere[1]
-            z = np.cos(v) * self.env.radius + sphere[2]
-            self.ax.plot_surface(x, y, z, color='orange',alpha=0.5)
             
         
     def draw_spheres(self, global_sphere_coords, track_end_effector=False):
@@ -101,8 +93,26 @@ class Visualize_UR(object):
         '''
         global_sphere_coords = self.transform.conf2sphere_coords(conf)
         self.draw_spheres(global_sphere_coords)
-        self.draw_square()
+        #self.draw_square()
         plt.ioff()
         self.show()
         plt.show()
         time.sleep(0.1)
+
+    def show_our_path(self, smooth_path, tangents, conf, scale):#TODO - which scale? 0.1? 0.05?
+        self.ax.plot([0,0.5],[0,0],[0,0],c='red')
+        self.ax.plot([0,0],[0,0.5],[0,0],c='green')
+        self.ax.plot([0,0],[0,0],[0,0.5],c='blue')
+        self.draw_obstacles()
+
+        self.ax.plot(smooth_path[:, 0], 
+                     smooth_path[:, 1], 
+                     smooth_path[:, 2], label='Adjusted Path')
+
+        for i in range(len(smooth_path)):
+            x, y, z = smooth_path[i]
+            dx, dy, dz = tangents[i] * scale
+            self.ax.quiver(x, y, z, dx, dy, dz, color='r', 
+                           length=scale, normalize=False)
+            
+        self.show_conf(conf)

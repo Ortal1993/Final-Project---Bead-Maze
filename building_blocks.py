@@ -33,9 +33,6 @@ class Building_Blocks(object):
         return True if in collision
         @param conf - some configuration
         """
-        # Ensure conf is a 1D array
-        conf = np.asarray(conf).reshape(-1)
-
         tupl_conf = tuple(conf)  # Convert the configuration to a tuple
         try:
             res = self.checked_confs[tupl_conf]
@@ -52,7 +49,7 @@ class Building_Blocks(object):
             if joint == 'shoulder_link':
                 continue
             if any(((sphere[2] - sphere_radius_per_joint[joint]) <= 0) or (
-                    sphere[0] + sphere_radius_per_joint[joint] > 0.4) for sphere in spheres):
+                    sphere[0] + sphere_radius_per_joint[joint] > 0.7) for sphere in spheres):
                 return True
 
         # arm - arm collision
@@ -87,7 +84,6 @@ class Building_Blocks(object):
         max_dist = 0
 
         for config in intermediate_configs:
-            config = np.asarray(config).reshape(-1)  # Ensure config is a 1D array
             if self.is_in_collision(config):
                 return True, np.inf
 
@@ -98,7 +94,7 @@ class Building_Blocks(object):
 
             # Calculate distance from the path
             current_dist = self.compute_closest_point_on_path(end_effector_pos, splines)
-            if current_dist > 10:
+            if current_dist > 10:#TODO - why 10?
                 return True, np.inf
             max_dist = max(max_dist, current_dist)
 
@@ -107,9 +103,8 @@ class Building_Blocks(object):
     def compute_closest_point_on_path(self, point, splines):
         """
         Compute the closest point on the path (defined by splines) to the given point.
-        This function should return the maximum distance from the point to the spline path.
+        This function should return the minimum distance from the point to the spline path.
         """
-        point = point.flatten()  # Ensure point is a 1D array
         distances = np.linalg.norm(splines - point, axis=1)
         return np.min(distances)
 

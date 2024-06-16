@@ -22,21 +22,13 @@ class Visualize_Gif(object):
         self.ax.set_ylim3d(-1, 1)
         self.ax.set_zlim3d(0, 2)
 
-    def draw_obstacles(self, cube_obstacles = []):
+    def draw_obstacles(self):
         u, v = np.mgrid[0:2 * np.pi:10j, 0:np.pi:10j]
         for sphere in self.env.obstacles:
             x = np.cos(u) * np.sin(v) * self.env.radius + sphere[0]
             y = np.sin(u) * np.sin(v) * self.env.radius + sphere[1]
             z = np.cos(v) * self.env.radius + sphere[2]
             self.ax.plot_surface(x, y, z, color='red',alpha=0.5)
-        for cube in cube_obstacles:
-            # cube size is 4*4*4 cm
-            # cube is defined by x,z,y of its center
-            # approximate the cube as a sphere cause it's easier
-            x = np.cos(u) * np.sin(v) * self.env.radius + cube[0]
-            y = np.sin(u) * np.sin(v) * self.env.radius + cube[1]
-            z = np.cos(v) * self.env.radius + cube[2]
-            self.ax.plot_surface(x, y, z, color='blue', alpha=0.5)
 
     def draw_robot(self, config):
         global_sphere_coords = self.transform.conf2sphere_coords(config)
@@ -61,8 +53,8 @@ class Visualize_Gif(object):
                     [ee_list[i][1], ee_list[i+1][1]], 
                     [ee_list[i][2], ee_list[i+1][2]], color='red')
 
-    def draw(self, config, cubes):
-        self.draw_obstacles(cubes)
+    def draw(self, config):
+        self.draw_obstacles()
         self.draw_robot(config)
         plt.show()
 
@@ -78,23 +70,21 @@ class Visualize_Gif(object):
         interpolated_path.append(path[-1])
         return interpolated_path
 
-    def save_paths_to_gif(self, path_list: list[list[list[float]]], cube_list: list[list[list[float]]], filename: str = None):
+    def save_paths_to_gif(self, path_list: list[list[list[float]]], filename: str = None):
         """
         Inputs:
         path_list: a list of paths for the robot to take (list[list[configuration]])
-        cube_list: a list of cube positions, for each of the paths (list[list[cube position]])
-        each path needs a matching cube position list for where the cubes are during that path
         """
         num_paths = len(path_list)
         num_current_path = 1
         images = []
         end_effector_points = []
-        for path, cubes in zip(path_list, cube_list):
+        for path in zip(path_list):
             print(f'Drawing path {num_current_path} / {num_paths}')
             num_current_path += 1
             i_path = self.interpolate_path(path)
             for config in i_path:
-                self.draw_obstacles(cubes)
+                self.draw_obstacles()
                 ee = self.draw_robot(config)
                 end_effector_points.append(ee)
                 self.draw_ee(end_effector_points)
